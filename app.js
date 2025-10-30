@@ -350,6 +350,7 @@ function showReportModal() {
                     <div><strong>Destino:</strong> ${record.destino}</div>
                     <div><strong>Telefone:</strong> ${record.telefone}</div>
                     <div><strong>Status:</strong> <span style="color: ${record.status === 'Autorizado' ? '#16a34a' : '#dc2626'}; font-weight: 600;">${record.status}</span></div>
+                    ${record.horaSaida ? `<div><strong>Hora Saída:</strong> ${record.horaSaida}</div>` : ''}
                     ${record.observacao ? `<div style="grid-column: 1 / -1;"><strong>Observação:</strong> ${record.observacao}</div>` : ''}
                 </div>
             </div>
@@ -407,7 +408,7 @@ function generatePDF(records, startDate, endDate) {
             <table>
                 <thead>
                     <tr>
-                        <th>Data/Hora</th>
+                        <th>Data/Hora Entrada</th>
                         <th>Tipo</th>
                         <th>Posto/Grad.</th>
                         <th>RE/RG</th>
@@ -416,6 +417,7 @@ function generatePDF(records, startDate, endDate) {
                         <th>Destino</th>
                         <th>Telefone</th>
                         <th>Status</th>
+                        <th>Hora Saída</th>
                         <th>Observação</th>
                     </tr>
                 </thead>
@@ -434,6 +436,7 @@ function generatePDF(records, startDate, endDate) {
                 <td>${record.destino}</td>
                 <td>${record.telefone}</td>
                 <td class="${record.status === 'Autorizado' ? 'status-autorizado' : 'status-nao-autorizado'}">${record.status}</td>
+                <td>${record.horaSaida || '-'}</td>
                 <td>${record.observacao || '-'}</td>
             </tr>
         `;
