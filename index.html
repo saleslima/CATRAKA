@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Acesso - COPOM PMESP</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="logo.png" alt="Logo COPOM" class="header-logo">
+            <button id="nightModeToggle" class="night-mode-toggle" title="Modo Noturno">🌙</button>
+            <h1>Controle de Acesso ao Prédio</h1>
+            <p>COPOM - Polícia Militar de São Paulo</p>
+            <div class="ticker">
+                <span>DESENVOLVIDO PELO SETOR DE TECNOLOGIA COPOM SP</span>
+            </div>
+        </header>
+
+        <div class="action-buttons">
+            <button id="cadastroBtn" class="btn-action">Cadastro</button>
+        </div>
+
+        <form id="accessForm" style="display: none;">
+            <div class="form-group">
+                <label for="tipo">Tipo:</label>
+                <select id="tipo" required>
+                    <option value="">Selecione...</option>
+                    <option value="Civil">Civil</option>
+                    <option value="Militar">Militar</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="postoGraduacaoGroup" style="display: none;">
+                <label for="postoGraduacao">Posto/Graduação:</label>
+                <select id="postoGraduacao">
+                    <option value="">Selecione...</option>
+                    <option value="Cel PM">Cel PM</option>
+                    <option value="Ten Cel PM">Ten Cel PM</option>
+                    <option value="Maj PM">Maj PM</option>
+                    <option value="Cap PM">Cap PM</option>
+                    <option value="1º Ten PM">1º Ten PM</option>
+                    <option value="2º Ten PM">2º Ten PM</option>
+                    <option value="Subten PM">Subten PM</option>
+                    <option value="1º Sgt PM">1º Sgt PM</option>
+                    <option value="2º Sgt PM">2º Sgt PM</option>
+                    <option value="3º Sgt PM">3º Sgt PM</option>
+                    <option value="Cb PM">Cb PM</option>
+                    <option value="Sd PM 1ª Cl">Sd PM 1ª Cl</option>
+                    <option value="Sd PM 2ª Cl">Sd PM 2ª Cl</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="reRg">RE/RG:</label>
+                <input type="text" id="reRg" required>
+            </div>
+
+            <div class="form-group">
+                <label for="nomeCompleto">Nome Completo:</label>
+                <input type="text" id="nomeCompleto" required>
+            </div>
+
+            <div class="form-group">
+                <label for="unidade">Unidade:</label>
+                <input type="text" id="unidade" required>
+            </div>
+
+            <div class="form-group">
+                <label for="destino">Destino:</label>
+                <input type="text" id="destino" required>
+            </div>
+
+            <div class="form-group">
+                <label for="telefone">Telefone:</label>
+                <input type="tel" id="telefone" required>
+            </div>
+
+            <div class="form-group">
+                <label for="status">Status:</label>
+                <select id="status" required>
+                    <option value="">Selecione...</option>
+                    <option value="Autorizado">Autorizado</option>
+                    <option value="Não Autorizado">Não Autorizado</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dataHora">Data e Hora:</label>
+                <input type="text" id="dataHora" readonly>
+            </div>
+
+            <button type="submit" class="btn-save">Salvar</button>
+            <button type="button" class="btn-report" id="reportBtn">Relatório</button>
+        </form>
+
+        <div class="records-section">
+            <h2>Último Registro de Acesso</h2>
+            <div id="recordsList"></div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
