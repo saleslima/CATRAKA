@@ -26,10 +26,13 @@ const statusSelect = document.getElementById('status');
 const reportBtn = document.getElementById('reportBtn');
 const nightModeToggle = document.getElementById('nightModeToggle');
 const cadastroBtn = document.getElementById('cadastroBtn');
+const noLocalBtn = document.getElementById('noLocalBtn');
+const ultimas24hBtn = document.getElementById('ultimas24hBtn');
 const accessForm = document.getElementById('accessForm');
 
 let allRecords = {};
 let pendingFormData = null;
+let currentView = 'noLocal'; // default view
 
 // Cadastro button functionality
 cadastroBtn.addEventListener('click', () => {
@@ -43,6 +46,22 @@ cadastroBtn.addEventListener('click', () => {
         postoGraduacaoGroup.style.display = 'none';
         postoGraduacaoSelect.required = false;
     }
+});
+
+// No Local button functionality
+noLocalBtn.addEventListener('click', () => {
+    currentView = 'noLocal';
+    accessForm.style.display = 'none';
+    cadastroBtn.textContent = 'Cadastro';
+    updateRecordsList();
+});
+
+// 24h button functionality
+ultimas24hBtn.addEventListener('click', () => {
+    currentView = '24h';
+    accessForm.style.display = 'none';
+    cadastroBtn.textContent = 'Cadastro';
+    updateRecordsList();
 });
 
 // Show/hide posto/graduação based on tipo selection
@@ -618,28 +637,38 @@ document.head.appendChild(style);
 onValue(ref(database, 'acessos'), (snapshot) => {
     const data = snapshot.val();
     allRecords = data || {};
-    
-    if (!data) {
+    updateRecordsList();
+});
+
+function updateRecordsList() {
+    if (!allRecords || Object.keys(allRecords).length === 0) {
         recordsList.innerHTML = '<div class="no-records">Nenhum registro encontrado</div>';
         return;
     }
     
-    const records = Object.entries(data)
+    const records = Object.entries(allRecords)
         .map(([id, record]) => ({ id, ...record }))
         .sort((a, b) => b.timestamp - a.timestamp);
     
-    // Filter records from last 13 hours without exit time
-    const thirteenHoursAgo = Date.now() - (13 * 60 * 60 * 1000);
-    const recentRecords = records.filter(record => 
-        record.timestamp >= thirteenHoursAgo && !record.horaSaida
-    );
+    let filteredRecords = [];
     
-    if (recentRecords.length === 0) {
-        recordsList.innerHTML = '<div class="no-records">Nenhum registro encontrado nas últimas 13 horas</div>';
+    if (currentView === 'noLocal') {
+        // Show all records without exit time, regardless of date
+        filteredRecords = records.filter(record => !record.horaSaida);
+    } else if (currentView === '24h') {
+        // Show records with exit time from last 24 hours
+        const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+        filteredRecords = records.filter(record => 
+            record.horaSaida && record.timestampSaida >= twentyFourHoursAgo
+        );
+    }
+    
+    if (filteredRecords.length === 0) {
+        recordsList.innerHTML = `<div class="no-records">Nenhum registro encontrado${currentView === '24h' ? ' nas últimas 24 horas' : ''}</div>`;
         return;
     }
     
-    recordsList.innerHTML = recentRecords.map(record => `
+    recordsList.innerHTML = filteredRecords.map(record => `
         <div class="record-item">
             <div class="record-header">
                 <span class="record-type">${record.tipo}${record.postoGraduacao ? ` - ${record.postoGraduacao}` : ''}</span>
@@ -652,9 +681,10 @@ onValue(ref(database, 'acessos'), (snapshot) => {
                 <div><strong>Destino:</strong> ${record.destino}</div>
                 <div><strong>Telefone:</strong> ${record.telefone}</div>
                 <div><strong>Status:</strong> <span style="color: ${record.status === 'Autorizado' ? '#16a34a' : '#dc2626'}; font-weight: 600;">${record.status}</span></div>
+                ${record.horaSaida ? `<div><strong>Hora Saída:</strong> ${record.horaSaida}</div>` : ''}
                 ${record.observacao ? `<div style="grid-column: 1 / -1;"><strong>Observação:</strong> ${record.observacao}</div>` : ''}
             </div>
-            <button class="btn-exit-time" data-id="${record.id}">Registrar Hora de Saída</button>
+            ${!record.horaSaida ? `<button class="btn-exit-time" data-id="${record.id}">Registrar Hora de Saída</button>` : ''}
         </div>
     `).join('');
     
@@ -685,4 +715,4 @@ onValue(ref(database, 'acessos'), (snapshot) => {
             }
         });
     });
-});
+}
