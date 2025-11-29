@@ -688,31 +688,33 @@ function updateRecordsList() {
         </div>
     `).join('');
     
-    // Add event listeners to exit time buttons
-    document.querySelectorAll('.btn-exit-time').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const recordId = e.target.dataset.id;
-            const now = new Date();
-            const horaSaida = now.toLocaleString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-            
-            try {
-                const { update } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
-                await update(ref(database, `acessos/${recordId}`), {
-                    horaSaida: horaSaida,
-                    timestampSaida: Date.now()
+    // Add event listeners to exit time buttons after rendering
+    setTimeout(() => {
+        document.querySelectorAll('.btn-exit-time').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const recordId = e.target.dataset.id;
+                const now = new Date();
+                const horaSaida = now.toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
                 });
-                showNotification('Hora de saída registrada com sucesso!');
-            } catch (error) {
-                console.error('Erro ao registrar hora de saída:', error);
-                showNotification('Erro ao registrar hora de saída', true);
-            }
+                
+                try {
+                    const { update } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+                    await update(ref(database, `acessos/${recordId}`), {
+                        horaSaida: horaSaida,
+                        timestampSaida: Date.now()
+                    });
+                    showNotification('Hora de saída registrada com sucesso!');
+                } catch (error) {
+                    console.error('Erro ao registrar hora de saída:', error);
+                    showNotification('Erro ao registrar hora de saída', true);
+                }
+            });
         });
-    });
+    }, 0);
 }
