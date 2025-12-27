@@ -634,9 +634,34 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-onValue(ref(database, 'acessos'), (snapshot) => {
+onValue(ref(database, 'acessos'), async (snapshot) => {
     const data = snapshot.val();
     allRecords = data || {};
+    
+    // Check for records older than 10 hours without exit time
+    const tenHoursAgo = Date.now() - (10 * 60 * 60 * 1000);
+    const { update } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+    
+    for (const [id, record] of Object.entries(allRecords)) {
+        if (!record.horaSaida && record.timestamp < tenHoursAgo) {
+            const exitTime = new Date(record.timestamp + (10 * 60 * 60 * 1000));
+            const horaSaida = exitTime.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            await update(ref(database, `acessos/${id}`), {
+                horaSaida: horaSaida,
+                timestampSaida: record.timestamp + (10 * 60 * 60 * 1000),
+                saidaAutomatica: true
+            });
+        }
+    }
+    
     updateRecordsList();
 });
 
