@@ -80,18 +80,22 @@ tipoSelect.addEventListener('change', (e) => {
     }
 });
 
-// Check for existing RE/RG when user finishes typing
-reRgInput.addEventListener('blur', () => {
-    const reRgValue = reRgInput.value.trim().toUpperCase();
-    reRgInput.value = reRgValue;
-    if (!reRgValue) return;
+// RE/RG input: only numbers allowed
+reRgInput.addEventListener('input', (e) => {
+    // Remove all non-numeric characters
+    let value = e.target.value.replace(/\D/g, '');
+    e.target.value = value;
     
-    const existingRecord = Object.values(allRecords).find(
-        record => record.reRg === reRgValue
-    );
-    
-    if (existingRecord) {
-        showExistingRecordModal(existingRecord);
+    // Check for existing records when user types 6 or more digits
+    if (value.length >= 6) {
+        const prefix = value.substring(0, 6);
+        const matchingRecords = Object.entries(allRecords)
+            .filter(([id, record]) => record.reRg && record.reRg.startsWith(prefix))
+            .map(([id, record]) => record);
+        
+        if (matchingRecords.length > 0) {
+            showMultipleRecordsModal(matchingRecords);
+        }
     }
 });
 
@@ -168,36 +172,60 @@ function showPasswordModal() {
     });
 }
 
-function showExistingRecordModal(record) {
+function showMultipleRecordsModal(records) {
+    // Remove any existing modal first
+    const existingModal = document.querySelector('.records-selection-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
     const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
-        <div class="modal">
-            <h3>Registro Encontrado</h3>
-            <p style="margin-bottom: 16px; color: #555;">Já existe um registro com este RE/RG. Deseja usar os dados existentes?</p>
+    modal.className = 'modal-overlay records-selection-modal';
+    
+    const recordsHtml = records.map((record, index) => `
+        <div class="record-item" style="cursor: pointer; transition: background 0.2s;" data-index="${index}">
+            <div class="record-header">
+                <span class="record-type">${record.tipo}${record.postoGraduacao ? ` - ${record.postoGraduacao}` : ''}</span>
+            </div>
             <div class="record-details">
-                <div><strong>Tipo:</strong> ${record.tipo}</div>
-                ${record.postoGraduacao ? `<div><strong>Posto/Graduação:</strong> ${record.postoGraduacao}</div>` : ''}
                 <div><strong>RE/RG:</strong> ${record.reRg}</div>
-                ${record.nomeCompleto ? `<div><strong>Nome Completo:</strong> ${record.nomeCompleto}</div>` : ''}
+                ${record.nomeCompleto ? `<div><strong>Nome:</strong> ${record.nomeCompleto}</div>` : ''}
                 <div><strong>Unidade:</strong> ${record.unidade}</div>
                 <div><strong>Telefone:</strong> ${record.telefone}</div>
             </div>
+        </div>
+    `).join('');
+    
+    modal.innerHTML = `
+        <div class="modal">
+            <h3>Registros Encontrados</h3>
+            <p style="margin-bottom: 16px; color: #555;">Encontramos ${records.length} registro(s) com estes dígitos. Clique em um para usar os dados:</p>
+            <div class="report-results" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+                ${recordsHtml}
+            </div>
             <div class="modal-buttons">
-                <button class="btn-yes">Sim, usar dados</button>
-                <button class="btn-no">Não, digitar novo</button>
+                <button class="btn-no" id="closeRecordsModal">Fechar</button>
             </div>
         </div>
     `;
     
     document.body.appendChild(modal);
     
-    modal.querySelector('.btn-yes').addEventListener('click', () => {
-        fillFormWithRecord(record);
-        modal.remove();
+    // Add click listeners to each record
+    modal.querySelectorAll('.record-item').forEach((item, index) => {
+        item.addEventListener('mouseenter', () => {
+            item.style.background = '#f0f0f0';
+        });
+        item.addEventListener('mouseleave', () => {
+            item.style.background = 'white';
+        });
+        item.addEventListener('click', () => {
+            fillFormWithRecord(records[index]);
+            modal.remove();
+        });
     });
     
-    modal.querySelector('.btn-no').addEventListener('click', () => {
+    modal.querySelector('#closeRecordsModal').addEventListener('click', () => {
         modal.remove();
     });
     
@@ -241,9 +269,9 @@ function updateDateTime() {
 updateDateTime();
 setInterval(updateDateTime, 1000);
 
-// Convert all text inputs to uppercase
+// Convert all text inputs to uppercase (except RE/RG which is numbers only)
 document.querySelectorAll('input[type="text"], input[type="tel"]').forEach(input => {
-    if (input.id !== 'dataHora') {
+    if (input.id !== 'dataHora' && input.id !== 'reRg') {
         input.addEventListener('input', (e) => {
             const start = e.target.selectionStart;
             const end = e.target.selectionEnd;

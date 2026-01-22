@@ -529,6 +529,10 @@ body.night-mode .date-range-inputs input {
     border-color: #444;
 }
 
+body.night-mode .records-selection-modal .record-item:hover {
+    background: #333 !important;
+}
+
 .night-mode-toggle {
     position: absolute;
     top: 20px;
