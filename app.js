@@ -244,6 +244,11 @@ function fillFormWithRecord(record) {
         document.getElementById('postoGraduacao').value = record.postoGraduacao;
     }
     
+    // Fill RE/RG with only numeric characters from the record
+    if (record.reRg) {
+        document.getElementById('reRg').value = record.reRg.replace(/\D/g, '');
+    }
+    
     if (record.nomeCompleto) {
         document.getElementById('nomeCompleto').value = record.nomeCompleto;
     }
@@ -671,6 +676,13 @@ onValue(ref(database, 'acessos'), async (snapshot) => {
     const { update } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
     
     for (const [id, record] of Object.entries(allRecords)) {
+        // Strip non-numeric characters from RE/RG field in database
+        if (record.reRg && /\D/.test(record.reRg)) {
+            await update(ref(database, `acessos/${id}`), {
+                reRg: record.reRg.replace(/\D/g, '')
+            });
+        }
+        
         if (!record.horaSaida && record.timestamp < tenHoursAgo) {
             const exitTime = new Date(record.timestamp + (10 * 60 * 60 * 1000));
             const horaSaida = exitTime.toLocaleString('pt-BR', {
