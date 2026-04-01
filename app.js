@@ -182,16 +182,32 @@ function showMultipleRecordsModal(records) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay records-selection-modal';
     
-    const recordsHtml = records.map((record, index) => `
-        <div class="record-item" style="cursor: pointer; transition: background 0.2s;" data-index="${index}">
+    // Find the record IDs from allRecords
+    const recordsWithIds = records.map(record => {
+        const foundEntry = Object.entries(allRecords).find(([id, r]) => 
+            r.reRg === record.reRg && 
+            r.timestamp === record.timestamp
+        );
+        return {
+            ...record,
+            firebaseId: foundEntry ? foundEntry[0] : null
+        };
+    });
+    
+    const recordsHtml = recordsWithIds.map((record, index) => `
+        <div class="record-item" style="transition: background 0.2s;" data-index="${index}">
             <div class="record-header">
                 <span class="record-type">${record.tipo}${record.postoGraduacao ? ` - ${record.postoGraduacao}` : ''}</span>
             </div>
             <div class="record-details">
-                <div><strong>RE/RG:</strong> ${record.reRg}</div>
+                <div><strong>RE/RG:</strong> <span class="record-rerg-${index}">${record.reRg}</span></div>
                 ${record.nomeCompleto ? `<div><strong>Nome:</strong> ${record.nomeCompleto}</div>` : ''}
                 <div><strong>Unidade:</strong> ${record.unidade}</div>
                 <div><strong>Telefone:</strong> ${record.telefone}</div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button class="btn-use-record" data-index="${index}" style="flex: 1; padding: 8px; background: #1a1a1a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">Usar</button>
+                <button class="btn-edit-record" data-index="${index}" style="flex: 1; padding: 8px; background: white; color: #1a1a1a; border: 2px solid #1a1a1a; border-radius: 4px; cursor: pointer; font-size: 14px;">Editar RE/RG</button>
             </div>
         </div>
     `).join('');
@@ -199,7 +215,7 @@ function showMultipleRecordsModal(records) {
     modal.innerHTML = `
         <div class="modal">
             <h3>Registros Encontrados</h3>
-            <p style="margin-bottom: 16px; color: #555;">Encontramos ${records.length} registro(s) com estes dígitos. Clique em um para usar os dados:</p>
+            <p style="margin-bottom: 16px; color: #555;">Encontramos ${records.length} registro(s) com estes dígitos:</p>
             <div class="report-results" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
                 ${recordsHtml}
             </div>
@@ -211,17 +227,88 @@ function showMultipleRecordsModal(records) {
     
     document.body.appendChild(modal);
     
-    // Add click listeners to each record
-    modal.querySelectorAll('.record-item').forEach((item, index) => {
-        item.addEventListener('mouseenter', () => {
-            item.style.background = '#f0f0f0';
-        });
-        item.addEventListener('mouseleave', () => {
-            item.style.background = 'white';
-        });
-        item.addEventListener('click', () => {
-            fillFormWithRecord(records[index]);
+    // Add click listeners to use buttons
+    modal.querySelectorAll('.btn-use-record').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            fillFormWithRecord(recordsWithIds[index]);
             modal.remove();
+        });
+    });
+    
+    // Add click listeners to edit buttons
+    modal.querySelectorAll('.btn-edit-record').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            const record = recordsWithIds[index];
+            
+            if (!record.firebaseId) {
+                showNotification('Erro: ID do registro não encontrado', true);
+                return;
+            }
+            
+            const editModal = document.createElement('div');
+            editModal.className = 'modal-overlay';
+            editModal.innerHTML = `
+                <div class="modal">
+                    <h3>Editar Documento</h3>
+                    <div class="form-group">
+                        <label for="editReRg">RE/RG:</label>
+                        <input type="text" id="editReRg" value="${record.reRg}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Noto Sans', sans-serif;">
+                    </div>
+                    <div class="modal-buttons" style="margin-top: 20px;">
+                        <button class="btn-yes" id="saveEdit">Salvar</button>
+                        <button class="btn-no" id="cancelEdit">Cancelar</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(editModal);
+            
+            const editInput = editModal.querySelector('#editReRg');
+            
+            // Only allow numbers
+            editInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/\D/g, '');
+            });
+            
+            editInput.focus();
+            editInput.select();
+            
+            editModal.querySelector('#saveEdit').addEventListener('click', async () => {
+                const newReRg = editInput.value.trim();
+                
+                if (!newReRg) {
+                    showNotification('RE/RG não pode estar vazio', true);
+                    return;
+                }
+                
+                try {
+                    const { update } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+                    await update(ref(database, `acessos/${record.firebaseId}`), {
+                        reRg: newReRg
+                    });
+                    
+                    showNotification('Documento atualizado com sucesso!');
+                    editModal.remove();
+                    modal.remove();
+                } catch (error) {
+                    console.error('Erro ao atualizar:', error);
+                    showNotification('Erro ao atualizar documento', true);
+                }
+            });
+            
+            editModal.querySelector('#cancelEdit').addEventListener('click', () => {
+                editModal.remove();
+            });
+            
+            editModal.addEventListener('click', (e) => {
+                if (e.target === editModal) {
+                    editModal.remove();
+                }
+            });
         });
     });
     
